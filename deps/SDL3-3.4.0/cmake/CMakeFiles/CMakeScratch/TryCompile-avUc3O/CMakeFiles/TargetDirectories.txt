@@ -1,0 +1,3 @@
+/home/orf/Dev/Projects/game/SDL3-3.4.0/cmake/CMakeFiles/CMakeScratch/TryCompile-avUc3O/CMakeFiles/cmTC_5d6fa.dir
+/home/orf/Dev/Projects/game/SDL3-3.4.0/cmake/CMakeFiles/CMakeScratch/TryCompile-avUc3O/CMakeFiles/edit_cache.dir
+/home/orf/Dev/Projects/game/SDL3-3.4.0/cmake/CMakeFiles/CMakeScratch/TryCompile-avUc3O/CMakeFiles/rebuild_cache.dir

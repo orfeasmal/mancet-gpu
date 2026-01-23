@@ -1,0 +1,7 @@
+TODO
+build/
+deps/build/
+*.o
+*.so
+*.a
+*.pch

@@ -1,0 +1,1 @@
+/usr/bin/clang   -D_GNU_SOURCE=1 CMakeFiles/cmTC_5d6fa.dir/src.c.o -o cmTC_5d6fa
