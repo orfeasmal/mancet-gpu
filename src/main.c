@@ -10,6 +10,8 @@
 #include <glad/glad.h>
 #include <SDL3/SDL.h>
 
+#include "shader.h"
+
 #define OPENGL_DEBUG
 
 #define WIDTH 800
@@ -28,7 +30,7 @@ static void glDebugOutput(
 
 int main(int argc, char **argv)
 {
-	size_t width, height;
+	int32_t width, height;
 
 	if (argc < 3) {
 		width = WIDTH;
@@ -54,6 +56,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	SDL_SetWindowResizable(window, true);
+
 	SDL_GLContext context = SDL_GL_CreateContext(window);
 	if (context == NULL) {
 		fprintf(stderr, "SDL error: %s\n", SDL_GetError());
@@ -77,7 +81,53 @@ int main(int argc, char **argv)
 
 	glViewport(0, 0, width, height);
 
-	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+	float vertices[] = {
+		-1.0f, -1.0f,
+		 1.0f, -1.0f,
+		 1.0f,  1.0f,
+		-1.0f,  1.0f
+	};
+
+	uint32_t indices[] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	uint32_t vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	uint32_t vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(*vertices), NULL);
+
+	uint32_t ibo;
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	Shader shader = shader_create(
+		(ShaderSource[]) {
+			{
+				.file_name = "assets/shaders/vertex.glsl",
+				.shader_type = GL_VERTEX_SHADER
+			},
+			{
+				.file_name = "assets/shaders/fragment.glsl",
+				.shader_type = GL_FRAGMENT_SHADER
+			}
+		},
+		2
+	);
+
+	float offset_x, offset_y;
+	offset_x = offset_y = 0.0f;
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	bool quit = false;
 	while (!quit) {
@@ -92,16 +142,32 @@ int main(int argc, char **argv)
 					if (event.key.key == SDLK_ESCAPE)
 						quit = true;
 					break;
+				case SDL_EVENT_WINDOW_RESIZED:
+					SDL_GetWindowSize(window, &width, &height);
+					glViewport(0, 0, width, height);
+					break;
 			}
 		}
 
 		// RENDER
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		shader_set_uniform_2f(shader.id, "u_window_dimensions", width, height);
+		shader_set_uniform_2f(shader.id, "u_offset", offset_x, offset_y);
+		shader_set_uniform_1f(shader.id, "u_scale", 200);
+		shader_set_uniform_1ui(shader.id, "u_iterations", 10000);
 
+		glBindVertexArray(vao);
+		shader_bind(shader.id);
+		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(*indices), GL_UNSIGNED_INT, NULL);
 
 		SDL_GL_SwapWindow(window);
 	}
+
+	shader_destroy(shader.id);
+	glDeleteBuffers(1, &ibo);
+	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &vao);
 
 	SDL_GL_DestroyContext(context);
 	SDL_DestroyWindow(window);
