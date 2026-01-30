@@ -4,8 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-//#include <cglm/call.h>
 #include <glad/glad.h>
+
+#include "types.h"
 
 typedef struct {
 	const char *file_name;
@@ -29,6 +30,6 @@ void shader_unbind(void);
 void shader_set_uniform_1i(uint32_t shader, const char *name, int32_t value);
 void shader_set_uniform_1ui(uint32_t shader, const char *name, uint32_t value);
 void shader_set_uniform_1f(uint32_t shader, const char *name, float v);
-void shader_set_uniform_2f(uint32_t shader, const char *name, float v0, float v1);
+void shader_set_uniform_vec2(uint32_t shader, const char *name, vec2 v);
 
 #endif // SHADER_H

@@ -5,18 +5,24 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define LA_IMPLEMENTATION
-#include <la.h>
 #include <glad/glad.h>
 #include <SDL3/SDL.h>
 
+#include "types.h"
 #include "shader.h"
 
 #define OPENGL_DEBUG
 
-#define WIDTH 800
-#define HEIGHT 600
 #define TITLE "ManCet GPU"
+#define DEFAULT_WIDTH 800
+#define DEFAULT_HEIGHT 600
+
+#define DEFAULT_SCALE  200
+#define DEFAULT_OFFSET_X 0
+#define DEFAULT_OFFSET_Y 0
+#define DEFAULT_ITERATIONS 100
+#define DEFAULT_ITERATIONS_INCREASE 250
+#define DEFAULT_ZOOM_FACTOR 1.5
 
 static void glDebugOutput(
 	GLenum source,
@@ -28,18 +34,10 @@ static void glDebugOutput(
 	const void *userParam
 );
 
-int main(int argc, char **argv)
+int main(void)
 {
-	int32_t width, height;
-
-	if (argc < 3) {
-		width = WIDTH;
-		height = HEIGHT;
-	}
-	else {
-		width = strtoull(argv[1], NULL, 10);
-		height = strtoull(argv[2], NULL, 10);
-	}
+	int32_t width = DEFAULT_WIDTH;
+	int32_t height = DEFAULT_HEIGHT;
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -124,38 +122,113 @@ int main(int argc, char **argv)
 		2
 	);
 
-	float offset_x, offset_y;
-	offset_x = offset_y = 0.0f;
+	//bool replot = true;
+	vec2 size_half = { width / 2.0f, height / 2.0f };
+	vec2 offset = { 0.0f, 0.0f };
+	float scale = DEFAULT_SCALE;
+	uint32_t iterations = DEFAULT_ITERATIONS;
+	bool iterations_changed = true;
+
+	int32_t mouse_last_x, mouse_last_y;
+	int32_t mouse_scroll_amount = 0;
+	//bool c_key_down = false;
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	bool quit = false;
 	while (!quit) {
 		// UPDATE
+
+		mouse_scroll_amount = 0;
+
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_EVENT_QUIT:
 					quit = true;
 					break;
-				case SDL_EVENT_KEY_DOWN:
-					if (event.key.key == SDLK_ESCAPE)
-						quit = true;
-					break;
 				case SDL_EVENT_WINDOW_RESIZED:
 					SDL_GetWindowSize(window, &width, &height);
+					size_half = (vec2) { width / 2.0, height / 2.0 };
 					glViewport(0, 0, width, height);
 					break;
+				case SDL_EVENT_KEY_DOWN:
+					switch (event.key.key) {
+						case SDLK_ESCAPE:
+							quit = true;
+							break;
+						case SDLK_UP:
+							iterations += DEFAULT_ITERATIONS_INCREASE;
+							iterations_changed = true;
+							//replot = true;
+							break;
+						case SDLK_DOWN:
+							if (iterations <= DEFAULT_ITERATIONS_INCREASE)
+								break;
+
+							iterations -= DEFAULT_ITERATIONS_INCREASE;
+							iterations_changed = true;
+							//replot = true;
+							break;
+					}
+					break;
+				case SDL_EVENT_MOUSE_BUTTON_DOWN:
+					if (event.button.button == SDL_BUTTON_LEFT) {
+						mouse_last_x = event.button.x;
+						mouse_last_y = event.button.y;
+					}
+					break;
+				case SDL_EVENT_MOUSE_BUTTON_UP:
+					if (event.button.button == SDL_BUTTON_LEFT) {
+						offset.x += (float)(event.button.x - mouse_last_x);// / pixel_width;
+						offset.y += (float)(event.button.y - mouse_last_y);// / pixel_width;
+
+						//replot = true;
+					}
+					break;
+				case SDL_EVENT_MOUSE_WHEEL:
+					mouse_scroll_amount = event.wheel.y;
+					break;
+
 			}
+		}
+
+		if (mouse_scroll_amount > 0) {
+			scale *= DEFAULT_ZOOM_FACTOR;
+
+			offset.x *= DEFAULT_ZOOM_FACTOR;
+			offset.y *= DEFAULT_ZOOM_FACTOR;
+
+			//replot = true;
+		}
+		else if (mouse_scroll_amount < 0) {
+			scale /= DEFAULT_ZOOM_FACTOR;
+
+			offset.x /= DEFAULT_ZOOM_FACTOR;
+			offset.y /= DEFAULT_ZOOM_FACTOR;
+
+			if (iterations == 0)
+				iterations = 1;
+
+			//replot = true;
+		}
+
+
+		if (iterations_changed) {
+			iterations_changed = false;
+
+			printf("\33[2K\r");
+			printf("ITERATIONS: %u", iterations);
+			fflush(stdout);
 		}
 
 		// RENDER
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shader_set_uniform_2f(shader.id, "u_window_dimensions", width, height);
-		shader_set_uniform_2f(shader.id, "u_offset", offset_x, offset_y);
-		shader_set_uniform_1f(shader.id, "u_scale", 200);
-		shader_set_uniform_1ui(shader.id, "u_iterations", 100);
+		shader_set_uniform_vec2(shader.id, "u_window_size_half", size_half);
+		shader_set_uniform_vec2(shader.id, "u_offset", offset);
+		shader_set_uniform_1f(shader.id, "u_scale", scale);
+		shader_set_uniform_1ui(shader.id, "u_iterations", iterations);
 
 		glBindVertexArray(vao);
 		shader_bind(shader.id);

@@ -11,22 +11,16 @@ SDL_DIR = SDL3-3.4.0
 GLAD_DIR = glad
 GLAD_OBJ = $(GLAD_DIR)/*.o
 
-LA_DIR = la
-# NOTE: this object file is useless,
-# unless you change LADEF in la.h to something like static inline
-# and remove LA_IMPLEMENTATION from main.c
-LA_OBJ = $(LA_DIR)/*.o
-
 CC = clang
 LD = clang
 
 CFLAGS =  -std=c11 -Wall -Wextra -Wpedantic -I.
-CFLAGS += -Ideps/$(SDL_DIR)/include -Ideps/$(GLAD_DIR)/include -Ideps/$(LA_DIR)
+CFLAGS += -Ideps/$(SDL_DIR)/include -Ideps/$(GLAD_DIR)/include
 
 CFLAGS_DEB = -O0 -g -gdwarf-4 -fsanitize=address
 CFLAGS_REL = -O3
 
-LDFLAGS = deps/build/$(GLAD_OBJ) deps/build/$(LA_OBJ) -Wl,-rpath,deps/build/$(SDL_DIR)/ -Ldeps/build/$(SDL_DIR) -lSDL3
+LDFLAGS = deps/build/$(GLAD_OBJ) -Wl,-rpath,deps/build/$(SDL_DIR)/ -Ldeps/build/$(SDL_DIR) -lSDL3
 LDFLAGS_DEB = -fsanitize=address
 
 rwildcard = $(foreach d, $(wildcard $1*), $(call rwildcard, $d/, $2) $(filter $(subst *, %, $2), $d))
@@ -44,7 +38,7 @@ OBJ_REL     = $(patsubst $(SRC_DIR)/%.c, $(OBJ_REL_DIR)/%.o, $(SRC))
 EXE_DEB = $(BUILD_DEB)/$(PROJECT_NAME)
 EXE_REL = $(BUILD_REL)/$(PROJECT_NAME)
 
-.PHONY: run clean deps sdl glad la depsclean
+.PHONY: run clean deps sdl glad depsclean
 
 debug: $(EXE_DEB)
 release: $(EXE_REL)
@@ -75,7 +69,7 @@ clean:
 	@ echo -e "$(YELLOW)CLEANING PROJECT$(NC)"
 	@ rm -rf build
 
-deps: sdl glad la
+deps: sdl glad
 
 sdl:
 	@ echo -e "$(BLUE)BUILDING DEPENDENCY $(SDL_DIR)$(NC)"
@@ -84,10 +78,6 @@ sdl:
 glad:
 	@ echo -e "$(BLUE)BUILDING DEPENDENCY $(GLAD_DIR)$(NC)"
 	@ mkdir -p deps/build/$(GLAD_DIR) && cd deps/build/$(GLAD_DIR) && $(CC) -O3 -I../../$(GLAD_DIR)/include -c ../../$(GLAD_DIR)/src/*.c
-
-la:
-	@ echo -e "$(BLUE)BUILDING DEPENDENCY $(LA_DIR)$(NC)"
-	@ mkdir -p deps/build/$(LA_DIR) && cd deps/build/$(LA_DIR) && $(CC) -O3 -I../../$(LA_DIR) -c ../../$(LA_DIR)/*.c
 
 depsclean:
 	@ echo -e "$(YELLOW)CLEANING DEPENDENCIES$(NC)"

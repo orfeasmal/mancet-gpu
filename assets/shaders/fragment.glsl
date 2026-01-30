@@ -4,7 +4,7 @@
 
 layout(location = 0) out vec4 color;
 
-uniform vec2 u_window_dimensions;
+uniform vec2 u_window_size_half;
 uniform vec2 u_offset;
 uniform float u_scale;
 uniform float u_escape;
@@ -66,13 +66,12 @@ vec2 complex_mul(dvec2 z1, dvec2 z2)
 
 void main()
 {
-	vec2 window_half = u_window_dimensions / 2.0f;
-	vec2 c;
-	c.x = gl_FragCoord.x - u_offset.x - window_half.x;
-	c.y = gl_FragCoord.y - u_offset.y - window_half.y;
+	dvec2 c;
+	c.x = gl_FragCoord.x - u_offset.x - u_window_size_half.x;
+	c.y = gl_FragCoord.y + u_offset.y - u_window_size_half.y;
 	c /= u_scale;
 
-	vec2 z = c;
+	dvec2 z = c;
 
 	uint i;
 	for (i = 0; i < u_iterations; ++i) {

@@ -85,10 +85,10 @@ void shader_set_uniform_1f(uint32_t shader, const char *name, float v)
 	glUniform1f(get_uniform_location(shader, name), v);
 }
 
-void shader_set_uniform_2f(uint32_t shader, const char *name, float v0, float v1)
+void shader_set_uniform_vec2(uint32_t shader, const char *name, vec2 v)
 {
 	shader_bind(shader);
-	glUniform2f(get_uniform_location(shader, name), v0, v1);
+	glUniform2f(get_uniform_location(shader, name), v.x, v.y);
 }
 
 static int32_t get_uniform_location(uint32_t shader, const char *name)
