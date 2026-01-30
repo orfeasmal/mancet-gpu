@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 		shader_set_uniform_2f(shader.id, "u_window_dimensions", width, height);
 		shader_set_uniform_2f(shader.id, "u_offset", offset_x, offset_y);
 		shader_set_uniform_1f(shader.id, "u_scale", 200);
-		shader_set_uniform_1ui(shader.id, "u_iterations", 10000);
+		shader_set_uniform_1ui(shader.id, "u_iterations", 100);
 
 		glBindVertexArray(vao);
 		shader_bind(shader.id);
